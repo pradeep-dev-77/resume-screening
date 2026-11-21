@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScanIQ — AI Resume Match Engine</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%2300ADB5'/%3E%3Cpath d='M12 3.5L4.5 7.5v9L12 20.5l7.5-4v-9L12 3.5z' fill='none' stroke='%23222831' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M12 12v8.5M12 12L4.5 7.5M12 12l7.5-4.5' fill='none' stroke='%23222831' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root{
+    --c-darkest:#222831;
+    --c-dark:#393E46;
+    --c-accent:#00ADB5;
+    --c-light:#EEEEEE;
+
+    --bg-0:var(--c-darkest);
+    --bg-1:#282f39;
+    --panel:var(--c-dark);
+    --panel-2:#454c56;
+    --border:#4d5560;
+    --border-soft:#3f4750;
+    --ink:var(--c-light);
+    --ink-dim:#b9bcc0;
+    --ink-faint:#7c828b;
+    --accent:var(--c-accent);
+    --accent-soft:#3fc4cb;
+
+    --red:#f0495a;
+    --amber:#f5a623;
+    --green:#28d17c;
+
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+
+  :root[data-theme="light"]{
+    --bg-0:#EEEEEE;
+    --bg-1:#ffffff;
+    --panel:#ffffff;
+    --panel-2:#eef1f2;
+    --border:#d7dce0;
+    --border-soft:#e4e8eb;
+    --ink:#222831;
+    --ink-dim:#4c545c;
+    --ink-faint:#889199;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(0,173,181,0.10), transparent 60%),
+      radial-gradient(1000px 700px at 100% 10%, rgba(0,173,181,0.06), transparent 55%),
+      var(--bg-0);
+    color:var(--ink);
+    font-family:var(--font-body);
+    min-height:100vh;
+    padding:40px 24px 80px;
+    transition:background-color .25s, color .25s;
+  }
+
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  /* ---------- Header ---------- */
+  header{display:flex; align-items:center; justify-content:space-between; margin-bottom:36px; animation:dropIn .6s ease both; gap:16px; flex-wrap:wrap;}
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{
+    width:38px; height:38px; border-radius:10px;
+    background:linear-gradient(135deg, var(--accent), var(--accent-soft));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 24px rgba(0,173,181,0.35); flex-shrink:0;
+  }
+  .brand-mark svg{width:20px; height:20px;}
+  .brand-name{font-family:var(--font-display); font-weight:700; font-size:20px; letter-spacing:.2px;}
+  .brand-name span{color:var(--accent);}
+  .brand-tag{font-size:11.5px; color:var(--ink-faint); letter-spacing:1.5px; text-transform:uppercase; margin-top:1px;}
+  .header-right{display:flex; align-items:center; gap:14px;}
+  .header-meta{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-faint); text-align:right; line-height:1.6;}
+  .live-dot{display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--green); margin-right:6px; box-shadow:0 0 8px var(--green); animation:pulse 1.8s infinite;}
+
+  .theme-toggle{
+    display:flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--border-soft);
+    border-radius:10px; padding:6px; cursor:pointer;
+  }
+  .theme-toggle button{
+    border:none; background:none; color:var(--ink-faint); width:30px; height:30px; border-radius:7px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .15s;
+  }
+  .theme-toggle button.active{background:var(--accent); color:var(--c-darkest);}
+  .theme-toggle svg{width:15px; height:15px;}
+
+  @keyframes dropIn{from{opacity:0; transform:translateY(-10px);} to{opacity:1; transform:translateY(0);}}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.35;}}
+
+  /* ---------- Hero ---------- */
+  .hero{margin-bottom:34px; animation:dropIn .6s .05s ease both;}
+  .hero h1{font-family:var(--font-display); font-weight:600; font-size:clamp(26px,3.4vw,38px); line-height:1.15; max-width:760px;}
+  .hero h1 em{font-style:normal; color:var(--accent);}
+  .hero p{color:var(--ink-dim); margin-top:10px; max-width:640px; font-size:14.5px; line-height:1.6;}
+  /* ---------- Layout ---------- */
+  .stack{display:flex; flex-direction:column; gap:20px;}
+
+  .panel{background:var(--panel); border:1px solid var(--border-soft); border-radius:16px; padding:22px 22px 24px; animation:riseIn .55s ease both;}
+  @keyframes riseIn{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);}}
+
+  .panel-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:10px; flex-wrap:wrap;}
+  .panel-title{font-family:var(--font-display); font-weight:600; font-size:14.5px; display:flex; align-items:center; gap:8px;}
+  .panel-title .idx{
+    font-family:var(--font-mono); font-size:11px; color:var(--bg-0);
+    background:var(--accent); width:20px; height:20px; border-radius:6px;
+    display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;
+  }
+  .panel-sub{font-size:12px; color:var(--ink-faint); margin-top:2px;}
+  .char-count{font-family:var(--font-mono); font-size:11px; color:var(--ink-faint);}
+
+  textarea{
+    width:100%; min-height:150px; resize:vertical;
+    background:var(--bg-1); border:1px solid var(--border-soft);
+    border-radius:10px; color:var(--ink); font-family:var(--font-body);
+    font-size:13.5px; line-height:1.55; padding:14px;
+    transition:border-color .2s, box-shadow .2s, background-color .2s;
+  }
+  textarea:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,173,181,0.15);}
+  textarea::placeholder{color:var(--ink-faint);}
+
+  .upload-row{display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap;}
+  .file-btn{
+    position:relative; overflow:hidden;
+    display:inline-flex; align-items:center; gap:7px;
+    background:var(--bg-1); border:1px solid var(--border);
+    color:var(--ink-dim); font-family:var(--font-mono); font-size:11.5px;
+    padding:8px 13px; border-radius:8px; cursor:pointer; transition:all .15s;
+  }
+  .file-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .file-btn svg{width:13px; height:13px;}
+  .file-btn input[type=file]{position:absolute; inset:0; opacity:0; cursor:pointer;}
+  .sample-btn{
+    background:none; border:1px dashed var(--border); color:var(--ink-faint);
+    font-size:11.5px; padding:8px 12px; border-radius:8px; cursor:pointer;
+    font-family:var(--font-mono); transition:all .15s;
+  }
+  .sample-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .file-status{font-family:var(--font-mono); font-size:11px; color:var(--ink-faint); min-width:100%; margin-top:2px;}
+  .file-status.ok{color:var(--green);}
+  .file-status.err{color:var(--red);}
+  .file-status.busy{color:var(--accent);}
+
+  /* ---------- Candidate queue list (uploaded resumes) ---------- */
+  .cand-queue{margin-top:14px; display:flex; flex-direction:column; gap:8px;}
+  .cand-queue-empty{font-size:12px; color:var(--ink-faint); font-style:italic; padding:10px 2px;}
+  .queue-row{
+    display:flex; align-items:center; gap:12px; background:var(--bg-1); border:1px solid var(--border-soft);
+    border-radius:10px; padding:9px 12px; animation:riseIn .3s ease both;
+  }
+  .queue-row .qr-icon{width:26px; height:26px; border-radius:7px; background:var(--panel-2); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .queue-row .qr-icon svg{width:13px; height:13px; color:var(--ink-faint);}
+  .queue-row .qr-main{flex:1; min-width:0;}
+  .queue-row .qr-name{font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .queue-row .qr-file{font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .queue-row .qr-status{font-family:var(--font-mono); font-size:10.5px; flex-shrink:0;}
+  .queue-row .qr-status.ok{color:var(--green);}
+  .queue-row .qr-status.err{color:var(--red);}
+  .queue-row .qr-status.busy{color:var(--accent);}
+  .qr-remove{background:none; border:none; color:var(--ink-faint); cursor:pointer; width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .15s;}
+  .qr-remove:hover{color:var(--red); background:rgba(240,73,90,0.1);}
+  .qr-remove svg{width:13px; height:13px;}
+
+  /* ---------- Adjustment key: weight sliders ---------- */
+  .weight-row{display:flex; gap:28px; flex-wrap:wrap;}
+  .weight-field{display:flex; flex-direction:column; gap:8px; min-width:200px; flex:1;}
+  .weight-field label{
+    font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--ink-faint);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .weight-val{color:var(--accent); font-weight:700;}
+  .weight-field input[type=range]{
+    width:100%; accent-color:var(--accent); height:4px; cursor:pointer;
+  }
+  .weight-note{font-family:var(--font-mono); font-size:11px; color:var(--ink-faint); margin-top:16px; line-height:1.7;}
+  .weight-note b{color:var(--ink);}
+
+  /* ---------- Analyze bar ---------- */
+  .analyze-bar{display:flex; align-items:center; gap:14px; margin:6px 0 6px; flex-wrap:wrap;}
+  .analyze-btn{
+    font-family:var(--font-display); font-weight:600; font-size:14.5px;
+    color:var(--c-darkest); background:linear-gradient(120deg, var(--accent), var(--accent-soft));
+    border:none; padding:13px 26px; border-radius:11px; cursor:pointer;
+    display:flex; align-items:center; gap:10px;
+    box-shadow:0 8px 24px rgba(0,173,181,0.28);
+    transition:transform .15s, box-shadow .15s;
+  }
+  .analyze-btn:hover{transform:translateY(-2px); box-shadow:0 12px 28px rgba(0,173,181,0.36);}
+  .analyze-btn:active{transform:translateY(0);}
+  .analyze-btn:disabled{opacity:.55; cursor:not-allowed; transform:none;}
+  .analyze-btn svg{width:16px; height:16px;}
+
+  .ghost-btn{
+    font-family:var(--font-mono); font-weight:600; font-size:12.5px;
+    color:var(--ink); background:var(--panel-2); border:1px solid var(--border);
+    padding:11px 18px; border-radius:10px; cursor:pointer;
+    display:flex; align-items:center; gap:8px; transition:all .15s;
+  }
+  .ghost-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .ghost-btn:disabled{opacity:.45; cursor:not-allowed;}
+  .ghost-btn svg{width:14px; height:14px;}
+
+  .status-line{font-family:var(--font-mono); font-size:12px; color:var(--ink-faint); min-height:16px;}
+  .status-line.active{color:var(--accent);}
+
+  /* ---------- Results ---------- */
+  #results{margin-top:14px; display:none;}
+  #results.show{display:block; animation:riseIn .5s ease both;}
+
+  .summary-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px;}
+  @media (max-width:760px){ .summary-grid{grid-template-columns:repeat(2,1fr);} }
+  .summary-card{
+    background:var(--panel); border:1px solid var(--border-soft); border-radius:14px; padding:16px 18px;
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .summary-card .sc-label{font-family:var(--font-mono); font-size:10.5px; letter-spacing:1px; text-transform:uppercase; color:var(--ink-faint);}
+  .summary-card .sc-val{font-family:var(--font-display); font-weight:700; font-size:28px;}
+  .summary-card.pass .sc-val{color:var(--green);}
+  .summary-card.borderline .sc-val{color:var(--amber);}
+  .summary-card.fail .sc-val{color:var(--red);}
+
+  .batch-actions{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:18px;}
+
+  .cand-list{display:flex; flex-direction:column; gap:12px;}
+  .cand-card{background:var(--panel); border:1px solid var(--border-soft); border-radius:14px; overflow:hidden; animation:riseIn .4s ease both;}
+  .cand-head{display:flex; align-items:center; gap:14px; padding:14px 18px; cursor:pointer; transition:background-color .15s;}
+  .cand-head:hover{background:var(--panel-2);}
+  .cand-rank{font-family:var(--font-mono); font-size:11px; color:var(--ink-faint); width:22px; flex-shrink:0;}
+
+  .score-ring{width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; padding:5px;}
+  .score-ring-inner{
+    width:100%; height:100%; border-radius:50%; background:var(--panel);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-weight:700; font-size:14px; color:var(--ink);
+  }
+
+  .cand-info{flex:1; min-width:0;}
+  .cand-name{font-family:var(--font-display); font-weight:600; font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .cand-email{font-family:var(--font-mono); font-size:11px; color:var(--ink-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+  .cand-badge{
+    font-family:var(--font-mono); font-weight:700; font-size:10.5px; letter-spacing:.5px; text-transform:uppercase;
+    padding:6px 12px; border-radius:99px; border:1px solid; flex-shrink:0;
+  }
+  .cand-badge.pass{color:var(--green); border-color:var(--green); background:rgba(40,209,124,0.1);}
+  .cand-badge.borderline{color:var(--amber); border-color:var(--amber); background:rgba(245,166,35,0.1);}
+  .cand-badge.fail{color:var(--red); border-color:var(--red); background:rgba(240,73,90,0.1);}
+
+  .chevron{color:var(--ink-faint); font-size:13px; transition:transform .2s; flex-shrink:0;}
+  .cand-card.open .chevron{transform:rotate(180deg);}
+
+  .cand-body{padding:0 20px 22px; display:none; border-top:1px solid var(--border-soft);}
+  .cand-card.open .cand-body{display:block; animation:riseIn .3s ease both;}
+
+  .cand-body-grid{display:grid; grid-template-columns:1fr; gap:16px; padding-top:18px;}
+
+  .metric-row{margin-bottom:14px;}
+  .metric-top{display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:6px; gap:10px;}
+  .metric-top .m-label{color:var(--ink-dim);}
+  .metric-top .m-val{font-family:var(--font-mono); font-weight:700; color:var(--ink); flex-shrink:0;}
+  .meter{height:7px; border-radius:99px; background:var(--bg-1); overflow:hidden; border:1px solid var(--border-soft);}
+  .meter-fill{height:100%; border-radius:99px; transition:width .8s cubic-bezier(.22,1,.36,1); background:var(--accent);}
+
+  .skill-section{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  @media (max-width:560px){ .skill-section{grid-template-columns:1fr;} }
+  .skill-col h4{font-size:11.5px; text-transform:uppercase; letter-spacing:1px; color:var(--ink-faint); margin-bottom:10px; font-family:var(--font-mono);}
+  .chip-list{display:flex; flex-wrap:wrap; gap:7px;}
+  .chip{font-size:12px; padding:5px 11px; border-radius:99px; border:1px solid; font-family:var(--font-mono);}
+  .chip.matched{color:var(--accent); border-color:rgba(0,173,181,0.45); background:rgba(0,173,181,0.09);}
+  .chip.missing{color:var(--ink-faint); border-color:var(--border); background:var(--bg-1); text-decoration:line-through; text-decoration-color:var(--ink-faint);}
+  .chip.cert{color:var(--green); border-color:rgba(40,209,124,0.4); background:rgba(40,209,124,0.08);}
+  .empty-note{font-size:12px; color:var(--ink-faint); font-style:italic;}
+
+  /* ---------- Extra NLP signals: education / certs / links / ATS ---------- */
+  .info-section{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:18px; padding-top:16px; border-top:1px dashed var(--border-soft);}
+  @media (max-width:560px){ .info-section{grid-template-columns:1fr;} }
+  .info-col h4{font-size:11.5px; text-transform:uppercase; letter-spacing:1px; color:var(--ink-faint); margin-bottom:10px; font-family:var(--font-mono);}
+  .edu-line{font-size:13px; color:var(--ink); display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .edu-req{font-family:var(--font-mono); font-size:11px; color:var(--ink-faint);}
+  .edu-flag{font-family:var(--font-mono); font-weight:700; font-size:10px; text-transform:uppercase; letter-spacing:.4px; padding:3px 8px; border-radius:99px; border:1px solid;}
+  .edu-flag.meets{color:var(--green); border-color:var(--green); background:rgba(40,209,124,0.1);}
+  .edu-flag.below{color:var(--amber); border-color:var(--amber); background:rgba(245,166,35,0.1);}
+
+  .link-badges{display:flex; gap:8px; flex-wrap:wrap; margin-top:16px;}
+  .link-badge{
+    font-family:var(--font-mono); font-size:11px; padding:6px 11px; border-radius:8px; border:1px solid var(--border-soft);
+    color:var(--ink-faint); display:flex; align-items:center; gap:6px; background:var(--bg-1);
+  }
+  .link-badge.found{color:var(--accent); border-color:rgba(0,173,181,0.4); background:rgba(0,173,181,0.08);}
+  .link-badge a{color:inherit; text-decoration:none;}
+  .link-badge a:hover{text-decoration:underline;}
+
+  .ats-row{margin-top:16px;}
+  .ats-badge{
+    display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-weight:700; font-size:10.5px;
+    text-transform:uppercase; letter-spacing:.5px; padding:5px 11px; border-radius:99px; border:1px solid;
+  }
+  .ats-badge.low{color:var(--green); border-color:var(--green); background:rgba(40,209,124,0.1);}
+  .ats-badge.medium{color:var(--amber); border-color:var(--amber); background:rgba(245,166,35,0.1);}
+  .ats-badge.high{color:var(--red); border-color:var(--red); background:rgba(240,73,90,0.1);}
+  .ats-flags{font-family:var(--font-mono); font-size:11.5px; color:var(--ink-faint); margin-top:9px; line-height:1.7; padding-left:16px;}
+  .ats-flags li{margin-bottom:2px;}
+
+  .email-box{
+    margin-top:18px; padding-top:16px; border-top:1px dashed var(--border-soft);
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+  }
+  .email-box input[type=email]{
+    flex:1; min-width:200px; background:var(--bg-1); border:1px solid var(--border-soft); border-radius:8px;
+    color:var(--ink); font-family:var(--font-mono); font-size:12.5px; padding:9px 12px;
+  }
+  .email-box input[type=email]:focus{outline:none; border-color:var(--accent);}
+  .email-send-btn{
+    font-family:var(--font-mono); font-weight:600; font-size:12px; color:var(--c-darkest);
+    background:var(--accent); border:none; padding:9px 16px; border-radius:8px; cursor:pointer;
+    display:flex; align-items:center; gap:6px; white-space:nowrap; transition:opacity .15s;
+  }
+  .email-send-btn:hover{opacity:.88;}
+  .email-send-btn svg{width:13px; height:13px;}
+  .email-note{font-size:11px; color:var(--ink-faint); width:100%; margin-top:2px;}
+
+  .bulk-email-note{
+    font-family:var(--font-mono); font-size:11px; color:var(--ink-faint); margin-top:8px; line-height:1.6;
+  }
+
+  footer{text-align:center; margin-top:56px; font-size:11.5px; color:var(--ink-faint); font-family:var(--font-mono);}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" stroke="#222831" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 12v9M12 12L3 7M12 12l9-5" stroke="#222831" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">Scan<span>IQ</span></div>
+        <div class="brand-tag">Batch Resume Intelligence</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle" role="group" aria-label="Theme">
+        <button type="button" id="themeDark" title="Dark theme" class="active">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        </button>
+        <button type="button" id="themeLight" title="Light theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+      </div>
+      <div class="header-meta">
+        <div><span class="live-dot"></span>Engine status: ready</div>
+        <div>v2.3 · client-side NLP · batch mode</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <h1>Screen <em>an entire stack of resumes</em> against one job description, in one pass.</h1>
+    <p>Upload as many resumes as you like, and get a ranked, per-candidate breakdown — matched skills, education, certifications, experience, links, and an ATS-friendliness read for each person. Everything runs in your browser.</p>
+  </div>
+
+  <div class="stack">
+
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title"><span class="idx">1</span>Job description</div>
+          <div class="panel-sub">This is the single target every uploaded resume is scored against.</div>
+        </div>
+        <div class="char-count" id="countJd">0 chars</div>
+      </div>
+      <textarea id="jdInput" placeholder="Paste the job description here, or upload a .txt / .pdf file below..."></textarea>
+      <div class="upload-row">
+        <label class="file-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M12 3l4 4M12 3l-4 4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+          Upload .txt / .pdf
+          <input type="file" id="jdFile" accept=".txt,.pdf,text/plain,application/pdf">
+        </label>
+        <div class="file-status" id="jdFileStatus"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title"><span class="idx">2</span>Resumes</div>
+          <div class="panel-sub">Upload as many .txt or .pdf resumes as you need — each becomes its own candidate.</div>
+        </div>
+        <div class="char-count" id="countCand">0 candidates</div>
+      </div>
+      <div class="upload-row" style="margin-top:0;">
+        <label class="file-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M12 3l4 4M12 3l-4 4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+          Upload resumes (.txt / .pdf, multiple)
+          <input type="file" id="resumeFiles" accept=".txt,.pdf,text/plain,application/pdf" multiple>
+        </label>
+        <button class="sample-btn" id="clearResumes" type="button">✕ clear all</button>
+      </div>
+      <div class="cand-queue" id="candQueue">
+        <div class="cand-queue-empty" id="candQueueEmpty">No resumes uploaded yet.</div>
+      </div>
+    </div>
+
+    <div class="panel threshold-panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title"><span class="idx">3</span>Adjustment key</div>
+          <div class="panel-sub">Set how much experience, skills and keyword density each count toward a candidate's match score. Education, certifications, links and ATS-friendliness are shown per candidate as extra context and don't move this score.</div>
+        </div>
+      </div>
+
+      <div class="weight-row">
+        <div class="weight-field">
+          <label>Experience <span class="weight-val" id="expWeightVal">35%</span></label>
+          <input type="range" id="expWeight" min="0" max="100" value="35">
+        </div>
+        <div class="weight-field">
+          <label>Skills <span class="weight-val" id="skillWeightVal">45%</span></label>
+          <input type="range" id="skillWeight" min="0" max="100" value="45">
+        </div>
+        <div class="weight-field">
+          <label>Keyword density <span class="weight-val" id="kwWeightVal">20%</span></label>
+          <input type="range" id="kwWeight" min="0" max="100" value="20">
+        </div>
+      </div>
+
+      <div class="weight-note">
+        <div><span style="color:var(--green);">●</span> <b>Shortlisted</b> — score ≥ 65</div>
+        <div><span style="color:var(--amber);">●</span> <b>Needs review</b> — score 45–64</div>
+        <div><span style="color:var(--red);">●</span> <b>Not shortlisted</b> — score &lt; 45</div>
+        <div style="margin-top:8px;">Experience is now computed from actual years found in each resume (e.g. "5+ years", "2019–2023") compared against years required in the JD, not from text similarity. Skill matching also recognizes common aliases (JS = JavaScript, ML = Machine Learning, K8s = Kubernetes, etc).</div>
+      </div>
+    </div>
+
+    <div class="analyze-bar">
+      <button class="analyze-btn" id="analyzeBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        Run batch analysis
+      </button>
+      <div class="status-line" id="statusLine"></div>
+    </div>
+  </div>
+
+  <div id="results">
+
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="sc-label">Candidates scored</div>
+        <div class="sc-val" id="sumTotal">0</div>
+      </div>
+      <div class="summary-card pass">
+        <div class="sc-label">Shortlisted</div>
+        <div class="sc-val" id="sumShortlisted">0</div>
+      </div>
+      <div class="summary-card borderline">
+        <div class="sc-label">Needs review</div>
+        <div class="sc-val" id="sumReview">0</div>
+      </div>
+      <div class="summary-card fail">
+        <div class="sc-label">Not shortlisted</div>
+        <div class="sc-val" id="sumRejected">0</div>
+      </div>
+    </div>
+
+    <div class="batch-actions">
+      <button class="ghost-btn" id="csvBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M12 15l-4-4M12 15l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+        Download batch CSV report
+      </button>
+      <button class="ghost-btn" id="emailAllBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+        Email all shortlisted
+      </button>
+      <button class="ghost-btn" id="emailAllReviewBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+        Email all in review
+      </button>
+      <button class="ghost-btn" id="emailAllRejectedBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+        Email all not shortlisted
+      </button>
+    </div>
+    <div class="bulk-email-note">A browser page can't send email on its own — these buttons open one pre-filled draft in your default mail app, addressed (BCC) to everyone in that group, so it opens once instead of being blocked as multiple pop-ups. The button on each candidate card sends a personalized one-to-one email instead.</div>
+
+    <div class="cand-list" id="candList" style="margin-top:22px;"></div>
+  </div>
+
+  <footer>ScanIQ runs entirely client-side — no resume data leaves the browser.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  if(window['pdfjsLib']){
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  }
+
+  // ---------------- Config: skill dictionary, aliases & stopwords ----------------
+  const SKILL_DICTIONARY = [
+    "python","java","javascript","typescript","c++","c#","sql","nosql","mongodb","mysql","postgresql",
+    "react","angular","vue","node.js","express","django","flask","spring","html","css","tailwind",
+    "machine learning","deep learning","natural language processing","computer vision","tensorflow",
+    "pytorch","scikit-learn","keras","pandas","numpy","data analysis","data science","data engineering",
+    "aws","azure","gcp","docker","kubernetes","git","github","ci/cd","devops","linux","rest api","graphql",
+    "microservices","agile","scrum","project management","communication","leadership","teamwork","problem solving",
+    "critical thinking","time management","excel","tableau","power bi","statistics","algorithms","data structures",
+    "system design","testing","automation","cloud computing","cybersecurity","blockchain","android","ios",
+    "swift","kotlin","php","ruby","golang","rust","r","hadoop","spark","etl","api design","ux design","ui design"
+  ];
+
+  // Common abbreviations / alternate phrasings mapped to a canonical SKILL_DICTIONARY entry,
+  // so scoring isn't fooled by phrasing (e.g. "JS" vs "JavaScript").
+  const SKILL_ALIASES = {
+    "javascript": ["js"],
+    "typescript": ["ts"],
+    "machine learning": ["ml"],
+    "deep learning": ["dl"],
+    "natural language processing": ["nlp"],
+    "computer vision": ["cv"],
+    "kubernetes": ["k8s"],
+    "postgresql": ["postgres"],
+    "mongodb": ["mongo"],
+    "node.js": ["nodejs","node js","node"],
+    "react": ["react.js","reactjs"],
+    "vue": ["vue.js","vuejs"],
+    "python": ["py"],
+    "c#": ["c sharp","csharp"],
+    "golang": ["go"],
+    "power bi": ["powerbi"],
+    "scikit-learn": ["sklearn"],
+    "tensorflow": ["tf"],
+    "ui design": ["ui/ux"],
+    "ux design": ["ux/ui"],
+    "project management": ["pm"],
+    "ci/cd": ["cicd","continuous integration"],
+    "rest api": ["restful api","rest apis"]
+  };
+
+  const STOPWORDS = new Set(("a an the and or but if then else for of to in on at by with from as is are was were "+
+    "be been being this that these those it its it's you your we our they their he she his her i my me will "+
+    "would can could should shall may might must have has had do does did not no nor so than too very just "+
+    "about into over under again further out up down here there when where why how all any both each few more "+
+    "most other some such only own same s t don now while during before after above below between per via "+
+    "responsibilities requirements qualifications job role company team years experience strong ability "+
+    "including etc within also across using use used working work role role's candidate looking seeking").split(" "));
+
+  // ---------------- Certification & education dictionaries ----------------
+  const CERT_DICTIONARY = [
+    "aws certified solutions architect","aws certified developer","aws certified sysops","aws certified",
+    "microsoft certified","azure fundamentals","az-900","azure administrator","az-104",
+    "pmp","prince2","scrum master","csm","psm","comptia security+","comptia a+","ccna","ccnp",
+    "cka","ckad","google cloud certified","gcp professional","six sigma","itil","cissp","cisa",
+    "oracle certified professional","salesforce certified","google analytics certified","hubspot certified"
+  ];
+
+  const EDUCATION_LEVELS = [
+    {level:4, label:'Doctorate (PhD)', patterns:[/ph\.?d\.?/i, /doctorate/i]},
+    {level:3, label:"Master's", patterns:[/\bm\.?\s?tech\b/i, /\bm\.?\s?sc\b/i, /\bm\.?\s?s\b/i, /\bm\.?\s?a\b/i, /\bmba\b/i, /\bmca\b/i, /master'?s?\s+degree/i, /master'?s?\s+of\s+/i]},
+    {level:2, label:"Bachelor's", patterns:[/\bb\.?\s?tech\b/i, /\bb\.?\s?sc\b/i, /\bb\.?\s?e\b/i, /\bb\.?\s?a\b/i, /\bbca\b/i, /\bb\.?\s?com\b/i, /bachelor'?s?\s+degree/i, /bachelor'?s?\s+of\s+/i]},
+    {level:1, label:'Diploma / Associate', patterns:[/\bdiploma\b/i, /associate'?s?\s+degree/i]}
+  ];
+
+  // ---------------- DOM refs ----------------
+  const jdInput = document.getElementById('jdInput');
+  const countJd = document.getElementById('countJd');
+  const countCand = document.getElementById('countCand');
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  const csvBtn = document.getElementById('csvBtn');
+  const emailAllBtn = document.getElementById('emailAllBtn');
+  const emailAllReviewBtn = document.getElementById('emailAllReviewBtn');
+  const emailAllRejectedBtn = document.getElementById('emailAllRejectedBtn');
+  const statusLine = document.getElementById('statusLine');
+  const results = document.getElementById('results');
+  const jdFile = document.getElementById('jdFile');
+  const jdFileStatus = document.getElementById('jdFileStatus');
+  const resumeFiles = document.getElementById('resumeFiles');
+  const candQueue = document.getElementById('candQueue');
+  const candQueueEmpty = document.getElementById('candQueueEmpty');
+  const candList = document.getElementById('candList');
+  const expWeight = document.getElementById('expWeight');
+  const skillWeight = document.getElementById('skillWeight');
+  const kwWeight = document.getElementById('kwWeight');
+  const expWeightVal = document.getElementById('expWeightVal');
+  const skillWeightVal = document.getElementById('skillWeightVal');
+  const kwWeightVal = document.getElementById('kwWeightVal');
+  const themeDark = document.getElementById('themeDark');
+  const themeLight = document.getElementById('themeLight');
+
+  let candidates = [];   // {id, fileName, name, email, text, status}
+  let results_ = [];     // computed results (see scoreCandidate for shape)
+  let candCounter = 0;
+
+  jdInput.addEventListener('input', ()=> countJd.textContent = jdInput.value.length + ' chars');
+
+  // ---------------- Theme ----------------
+  function setTheme(theme){
+    document.documentElement.setAttribute('data-theme', theme);
+    themeDark.classList.toggle('active', theme==='dark');
+    themeLight.classList.toggle('active', theme==='light');
+  }
+  themeDark.addEventListener('click', ()=> setTheme('dark'));
+  themeLight.addEventListener('click', ()=> setTheme('light'));
+
+  // ---------------- File reading helpers ----------------
+  async function extractPdfText(file){
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data: buffer}).promise;
+    let text = "";
+    for(let p=1; p<=pdf.numPages; p++){
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      text += content.items.map(it => it.str).join(" ") + "\n";
+    }
+    return text.trim();
+  }
+  function readTxt(file){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.onerror = () => reject(new Error('read failed'));
+      reader.readAsText(file);
+    });
+  }
+
+  function extractEmail(text){
+    const m = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+    return m ? m[0] : "";
+  }
+  function extractName(text, fallback){
+    const lines = text.split("\n").map(l=>l.trim()).filter(Boolean);
+    for(const line of lines){
+      if(line.includes('@')) continue;
+      const words = line.split(/\s+/);
+      if(words.length>=1 && words.length<=5 && line.length<60 && !/^\d/.test(line)){
+        return line;
+      }
+      break;
+    }
+    return fallback;
+  }
+
+  // ---------------- Years-of-experience extraction ----------------
+  // Picks up direct mentions ("5+ years", "3 yrs") AND date ranges ("2019-2023", "Jan 2020 - Present").
+  function extractDirectYears(text){
+    const matches = [...text.matchAll(/(\d{1,2})\s*\+?\s*(?:-\s*\d{1,2}\s*)?(?:years?|yrs?)/gi)];
+    if(!matches.length) return 0;
+    return Math.max(...matches.map(m=>parseInt(m[1],10)));
+  }
+  function extractRangeYears(text){
+    const now = new Date().getFullYear();
+    const rangeRe = /(19|20)\d{2}\s*(?:-|–|—|to)\s*((19|20)\d{2}|present|current)/gi;
+    let total = 0;
+    let m;
+    while((m = rangeRe.exec(text))){
+      const startY = parseInt(m[0].match(/(19|20)\d{2}/)[0],10);
+      const endRaw = m[2].toLowerCase();
+      const endY = (endRaw==='present'||endRaw==='current') ? now : parseInt(endRaw,10);
+      if(endY>=startY && (endY-startY)<=50){
+        total += (endY-startY);
+      }
+    }
+    return Math.round(total);
+  }
+  function extractYears(text){
+    return Math.max(extractDirectYears(text), extractRangeYears(text));
+  }
+
+  // ---------------- Education level detection ----------------
+  function detectEducation(text){
+    for(const lvl of EDUCATION_LEVELS){
+      if(lvl.patterns.some(p=>p.test(text))) return lvl;
+    }
+    return {level:0, label:'Not stated'};
+  }
+
+  // ---------------- Certification matching ----------------
+  function extractCertifications(text){
+    const norm = text.toLowerCase();
+    const found = [];
+    CERT_DICTIONARY.forEach(cert=>{
+      const re = new RegExp(cert.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i');
+      if(re.test(norm)) found.push(cert);
+    });
+    return found;
+  }
+
+  // ---------------- GitHub / LinkedIn / portfolio link extraction ----------------
+  function extractLinks(text){
+    const linkedinM = text.match(/(https?:\/\/)?(www\.)?linkedin\.com\/[a-zA-Z0-9\-_\/%.]+/i);
+    const githubM = text.match(/(https?:\/\/)?(www\.)?github\.com\/[a-zA-Z0-9\-_\/%.]+/i);
+    const allUrls = [...text.matchAll(/\bhttps?:\/\/[^\s,;)]+/gi)].map(m=>m[0]);
+    const portfolio = allUrls.find(u => !/linkedin\.com/i.test(u) && !/github\.com/i.test(u)) || "";
+    return {
+      linkedin: linkedinM ? linkedinM[0] : "",
+      github: githubM ? githubM[0] : "",
+      portfolio
+    };
+  }
+
+  // ---------------- ATS-friendliness heuristic checker ----------------
+  // We only see extracted text (not the original layout), so this flags patterns that
+  // typically correlate with tables/columns/images/graphics tripping up real ATS parsers.
+  function atsCheck(text, fileName){
+    const flags = [];
+    const isPdf = /\.pdf$/i.test(fileName);
+    const trimmed = text.trim();
+    const words = trimmed.split(/\s+/).filter(Boolean);
+    const wordCount = words.length;
+
+    if(wordCount < 80){
+      flags.push("Very little extractable text — this resume may be image-based or scanned, which most ATS systems can't read at all.");
+    }
+    if(isPdf && wordCount > 0){
+      const singleCharTokens = words.filter(w=>w.length===1 && /[a-zA-Z]/.test(w)).length;
+      if(singleCharTokens/wordCount > 0.12){
+        flags.push("High ratio of single-character text fragments — often a sign of multi-column layouts or tables that scramble when an ATS parses them.");
+      }
+    }
+    if(!/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(text)){
+      flags.push("No email address detected in the extracted text — contact info may be inside an image, header/footer, or unusual placement.");
+    }
+    const bulletGlyphs = (text.match(/[•●▪◦‣]/g)||[]).length;
+    if(bulletGlyphs > 60){
+      flags.push("Unusually high number of bullet/graphic glyphs — may indicate heavy icon or graphic use that an ATS can't parse cleanly.");
+    }
+    if(isPdf && !/[a-z]{4,}\s+[a-z]{4,}/i.test(trimmed)){
+      flags.push("Extracted text doesn't read like normal sentences — layout may be too graphical or table-heavy for reliable parsing.");
+    }
+
+    const risk = flags.length===0 ? 'low' : flags.length===1 ? 'medium' : 'high';
+    return {risk, flags};
+  }
+
+  // ---------------- Candidate queue rendering ----------------
+  function renderQueue(){
+    candQueueEmpty.style.display = candidates.length===0 ? 'block' : 'none';
+    countCand.textContent = candidates.length + ' candidate' + (candidates.length===1 ? '' : 's');
+    candQueue.querySelectorAll('.queue-row').forEach(r=>r.remove());
+    candidates.forEach(c=>{
+      const row = document.createElement('div');
+      row.className = 'queue-row';
+      row.dataset.id = c.id;
+      row.innerHTML = `
+        <div class="qr-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 3v4a1 1 0 001 1h4"/><path d="M6 21a2 2 0 01-2-2V5a2 2 0 012-2h8l4 4v12a2 2 0 01-2 2H6z"/></svg></div>
+        <div class="qr-main">
+          <div class="qr-name">${escapeHtml(c.name || c.fileName)}</div>
+          <div class="qr-file">${escapeHtml(c.fileName)}${c.email ? ' · '+escapeHtml(c.email) : ''}</div>
+        </div>
+        <div class="qr-status ${c.status==='parsed'?'ok':c.status==='error'?'err':'busy'}">${c.statusMsg||''}</div>
+        <button class="qr-remove" title="Remove" data-remove="${c.id}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      `;
+      candQueue.appendChild(row);
+    });
+  }
+
+  candQueue.addEventListener('click', (e)=>{
+    const btn = e.target.closest('[data-remove]');
+    if(!btn) return;
+    const id = btn.getAttribute('data-remove');
+    candidates = candidates.filter(c=>c.id!==id);
+    renderQueue();
+  });
+
+  async function addFiles(fileList){
+    const files = Array.from(fileList);
+    for(const file of files){
+      const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+      const isTxt = file.type === 'text/plain' || /\.txt$/i.test(file.name);
+      const id = 'c' + (candCounter++);
+      const cand = {id, fileName:file.name, name:file.name.replace(/\.(txt|pdf)$/i,''), email:'', text:'', status:'busy', statusMsg:'⏳ reading…'};
+      candidates.push(cand);
+      renderQueue();
+
+      if(!isPdf && !isTxt){
+        cand.status='error'; cand.statusMsg='⚠ unsupported type';
+        renderQueue();
+        continue;
+      }
+      try{
+        const text = isTxt ? await readTxt(file) : await extractPdfText(file);
+        if(!text || text.trim().length < 10){
+          cand.status='error'; cand.statusMsg='⚠ no text found';
+          renderQueue();
+          continue;
+        }
+        cand.text = text;
+        cand.email = extractEmail(text);
+        cand.name = extractName(text, cand.name);
+        cand.status='parsed'; cand.statusMsg='✓ parsed';
+      }catch(err){
+        console.error(err);
+        cand.status='error'; cand.statusMsg='⚠ failed to read';
+      }
+      renderQueue();
+    }
+  }
+
+  resumeFiles.addEventListener('change', e=>{
+    addFiles(e.target.files);
+    resumeFiles.value = '';
+  });
+
+  document.getElementById('clearResumes').addEventListener('click', ()=>{
+    candidates = [];
+    results_ = [];
+    renderQueue();
+    results.classList.remove('show');
+  });
+
+  // ---------------- JD single upload ----------------
+  function setStatus(el, msg, cls){
+    el.textContent = msg;
+    el.className = 'file-status' + (cls ? ' '+cls : '');
+  }
+  jdFile.addEventListener('change', async e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+    const isTxt = file.type === 'text/plain' || /\.txt$/i.test(file.name);
+    if(!isPdf && !isTxt){ setStatus(jdFileStatus, "⚠ unsupported file type — use .txt or .pdf", 'err'); return; }
+    setStatus(jdFileStatus, "⏳ reading " + file.name + "…", 'busy');
+    try{
+      const text = isTxt ? await readTxt(file) : await extractPdfText(file);
+      if(!text){ setStatus(jdFileStatus, "⚠ no extractable text found", 'err'); return; }
+      jdInput.value = text;
+      countJd.textContent = text.length + ' chars';
+      setStatus(jdFileStatus, "✓ loaded " + file.name, 'ok');
+    }catch(err){
+      console.error(err);
+      setStatus(jdFileStatus, "⚠ failed to parse file", 'err');
+    }
+  });
+
+  // ---------------- NLP helpers ----------------
+  function normalize(text){
+    return text.toLowerCase().replace(/[^a-z0-9\.\+\#\s]/g," ").replace(/\s+/g," ").trim();
+  }
+  function tokenize(text){
+    return normalize(text).split(" ").filter(w => w.length > 1 && !STOPWORDS.has(w));
+  }
+  function termFrequency(tokens){
+    const tf = {};
+    tokens.forEach(t => tf[t] = (tf[t]||0)+1);
+    return tf;
+  }
+  function skillPattern(term){
+    return new RegExp("(^|[^a-z0-9])"+term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+"([^a-z0-9]|$)","i");
+  }
+  function findSkillsInText(normText){
+    const found = new Set();
+    const padded = " "+normText+" ";
+    SKILL_DICTIONARY.forEach(skill=>{
+      if(skillPattern(skill).test(padded)){ found.add(skill); return; }
+      const aliases = SKILL_ALIASES[skill];
+      if(aliases && aliases.some(a=>skillPattern(a).test(padded))){ found.add(skill); }
+    });
+    return found;
+  }
+  function topKeywords(tf, n){
+    return Object.entries(tf).sort((a,b)=> b[1]-a[1]).slice(0, n).map(e=>e[0]);
+  }
+
+  function scoreCandidate(cand, tfJd, jdSkills, jdTopKeywords, reqYears, jdCerts, jdEdu){
+    const resumeNorm = normalize(cand.text);
+    const resumeTokens = tokenize(cand.text);
+    const tfResume = termFrequency(resumeTokens);
+
+    // --- Experience: real years extracted from the resume vs years required by the JD ---
+    const candYears = extractYears(cand.text);
+    let expScore;
+    if(reqYears <= 0){
+      expScore = candYears > 0 ? 100 : 50;
+    }else{
+      expScore = Math.min(100, Math.round((candYears / reqYears) * 100));
+    }
+
+    // --- Skills (alias-aware) ---
+    const resumeSkills = findSkillsInText(resumeNorm);
+    const matched = [...jdSkills].filter(s => resumeSkills.has(s));
+    const missing = [...jdSkills].filter(s => !resumeSkills.has(s));
+    const skillScore = jdSkills.size > 0 ? Math.round((matched.length / jdSkills.size) * 100) : 50;
+
+    // --- Keyword density ---
+    const resumeTokenSet = new Set(resumeTokens);
+    const kwHits = jdTopKeywords.filter(k => resumeTokenSet.has(k));
+    const kwScore = jdTopKeywords.length > 0 ? Math.round((kwHits.length / jdTopKeywords.length) * 100) : 50;
+
+    // --- Education ---
+    const candEdu = detectEducation(cand.text);
+    const eduMeets = jdEdu.level > 0 ? (candEdu.level >= jdEdu.level) : null;
+
+    // --- Certifications ---
+    const candCerts = extractCertifications(cand.text);
+    const matchedCerts = jdCerts.length ? jdCerts.filter(c=>candCerts.includes(c)) : candCerts;
+    const missingCerts = jdCerts.length ? jdCerts.filter(c=>!candCerts.includes(c)) : [];
+
+    // --- Links ---
+    const links = extractLinks(cand.text);
+
+    // --- ATS-friendliness ---
+    const ats = atsCheck(cand.text, cand.fileName);
+
+    return {
+      id:cand.id, name:cand.name, email:cand.email, fileName:cand.fileName,
+      finalScore:0, expScore, skillScore, kwScore, matched, missing,
+      candYears, reqYears,
+      candEdu, jdEdu, eduMeets,
+      candCerts, matchedCerts, missingCerts, jdCerts,
+      links, ats
+    };
+  }
+
+  // ---------------- Adjustment key: score weights ----------------
+  function currentWeights(){
+    const e = Number(expWeight.value), s = Number(skillWeight.value), k = Number(kwWeight.value);
+    const total = e + s + k;
+    if(total <= 0) return {e:1/3, s:1/3, k:1/3};
+    return {e:e/total, s:s/total, k:k/total};
+  }
+  function updateWeightLabels(){
+    const w = currentWeights();
+    expWeightVal.textContent = Math.round(w.e*100) + '%';
+    skillWeightVal.textContent = Math.round(w.s*100) + '%';
+    kwWeightVal.textContent = Math.round(w.k*100) + '%';
+  }
+  function applyWeights(list){
+    const w = currentWeights();
+    list.forEach(r=>{
+      r.finalScore = Math.round(r.expScore*w.e + r.skillScore*w.s + r.kwScore*w.k);
+    });
+  }
+  [expWeight, skillWeight, kwWeight].forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      updateWeightLabels();
+      if(results_.length){
+        applyWeights(results_);
+        results_.sort((a,b)=> b.finalScore - a.finalScore);
+        renderResults();
+      }
+    });
+  });
+  updateWeightLabels();
+
+  // ---------------- Verdict thresholds (fixed) ----------------
+  const SHORTLIST_THRESHOLD = 65;
+  const REVIEW_THRESHOLD = 45;
+  function verdictFor(score){
+    if(score >= SHORTLIST_THRESHOLD) return {label:'Shortlisted', cls:'pass'};
+    if(score >= REVIEW_THRESHOLD) return {label:'Needs review', cls:'borderline'};
+    return {label:'Not shortlisted', cls:'fail'};
+  }
+
+  // ---------------- Run batch analysis ----------------
+  function runAnalysis(){
+    const jdRaw = jdInput.value.trim();
+    const parsedCandidates = candidates.filter(c=>c.status==='parsed');
+
+    if(jdRaw.length < 20){
+      statusLine.textContent = "⚠ add a job description (min ~20 characters) before running analysis.";
+      return;
+    }
+    if(parsedCandidates.length === 0){
+      statusLine.textContent = "⚠ upload at least one resume before running analysis.";
+      return;
+    }
+
+    analyzeBtn.disabled = true;
+    statusLine.classList.add('active');
+    statusLine.textContent = `scoring ${parsedCandidates.length} candidate${parsedCandidates.length===1?'':'s'}…`;
+
+    setTimeout(()=>{
+      const jdNorm = normalize(jdRaw);
+      const jdTokens = tokenize(jdRaw);
+      const tfJd = termFrequency(jdTokens);
+      const jdSkills = findSkillsInText(jdNorm);
+      const jdTopKeywords = topKeywords(tfJd, 20);
+      const reqYears = extractYears(jdRaw);
+      const jdCerts = extractCertifications(jdRaw);
+      const jdEdu = detectEducation(jdRaw);
+
+      results_ = parsedCandidates.map(c => scoreCandidate(c, tfJd, jdSkills, jdTopKeywords, reqYears, jdCerts, jdEdu));
+      applyWeights(results_);
+      results_.sort((a,b)=> b.finalScore - a.finalScore);
+
+      analyzeBtn.disabled = false;
+      statusLine.textContent = `✓ scored ${results_.length} candidate${results_.length===1?'':'s'}`;
+      renderResults();
+    }, 380);
+  }
+
+  // ---------------- Render results ----------------
+  function renderResults(){
+    results.classList.add('show');
+
+    let shortlisted=0, review=0, rejected=0;
+    results_.forEach(r=>{
+      const v = verdictFor(r.finalScore);
+      if(v.cls==='pass') shortlisted++;
+      else if(v.cls==='borderline') review++;
+      else rejected++;
+    });
+
+    document.getElementById('sumTotal').textContent = results_.length;
+    document.getElementById('sumShortlisted').textContent = shortlisted;
+    document.getElementById('sumReview').textContent = review;
+    document.getElementById('sumRejected').textContent = rejected;
+
+    candList.innerHTML = results_.map((r, idx)=>{
+      const v = verdictFor(r.finalScore);
+      const colorVar = v.cls==='pass' ? '--green' : v.cls==='borderline' ? '--amber' : '--red';
+      const expNote = r.reqYears > 0 ? `${r.candYears}yr found · ${r.reqYears}yr required` : `${r.candYears}yr found · no requirement stated in JD`;
+
+      const eduReqText = r.jdEdu.level > 0 ? `JD asks for ${r.jdEdu.label} or higher` : 'JD does not state a required education level';
+      const eduFlag = r.eduMeets===null ? '' : r.eduMeets
+        ? `<span class="edu-flag meets">meets requirement</span>`
+        : `<span class="edu-flag below">below requirement</span>`;
+
+      const certChips = r.candCerts.length
+        ? r.candCerts.map(c=>`<span class="chip cert">${escapeHtml(c)}</span>`).join('')
+        : '<span class="empty-note">no recognized certifications found</span>';
+
+      const linkBadge = (label, url, iconPath)=>{
+        const found = !!url;
+        const inner = found ? `<a href="${escapeAttr(url)}" target="_blank" rel="noopener">${escapeHtml(label)}</a>` : label;
+        return `<span class="link-badge ${found?'found':''}"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">${iconPath}</svg>${inner}${found ? '' : ' — not found'}</span>`;
+      };
+      const githubBadge = linkBadge('GitHub', r.links.github, '<path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 00-1.3-3.2 4.2 4.2 0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 00-6.2 0C6.6 2.8 5.5 3.1 5.5 3.1a4.2 4.2 0 00-.1 3.2A4.6 4.6 0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/>');
+      const linkedinBadge = linkBadge('LinkedIn', r.links.linkedin, '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 11v5M8 8v.01M12 16v-3a2 2 0 014 0v3M12 16v-5"/>');
+      const portfolioBadge = linkBadge('Portfolio', r.links.portfolio, '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 010 18M12 3a15 15 0 000 18"/>');
+
+      const atsFlagsHtml = r.ats.flags.length
+        ? `<ul class="ats-flags">${r.ats.flags.map(f=>`<li>${escapeHtml(f)}</li>`).join('')}</ul>`
+        : `<div class="empty-note" style="margin-top:8px;">No formatting red flags detected in the extracted text.</div>`;
+
+      return `
+      <div class="cand-card" data-id="${r.id}">
+        <div class="cand-head" data-toggle="${r.id}">
+          <div class="cand-rank">#${idx+1}</div>
+          <div class="score-ring" style="background:conic-gradient(var(${colorVar}) ${r.finalScore*3.6}deg, var(--bg-1) 0deg);">
+            <div class="score-ring-inner">${r.finalScore}</div>
+          </div>
+          <div class="cand-info">
+            <div class="cand-name">${escapeHtml(r.name)}</div>
+            <div class="cand-email">${r.email ? escapeHtml(r.email) : escapeHtml(r.fileName)}</div>
+          </div>
+          <div class="cand-badge ${v.cls}">${v.label}</div>
+          <div class="chevron">▾</div>
+        </div>
+        <div class="cand-body">
+          <div class="cand-body-grid">
+            <div>
+              <div class="metric-row">
+                <div class="metric-top"><span class="m-label">Experience match (${expNote})</span><span class="m-val">${r.expScore}%</span></div>
+                <div class="meter"><div class="meter-fill" style="width:${r.expScore}%;"></div></div>
+              </div>
+              <div class="metric-row">
+                <div class="metric-top"><span class="m-label">Required skill coverage</span><span class="m-val">${r.skillScore}%</span></div>
+                <div class="meter"><div class="meter-fill" style="width:${r.skillScore}%;"></div></div>
+              </div>
+              <div class="metric-row">
+                <div class="metric-top"><span class="m-label">Keyword density match</span><span class="m-val">${r.kwScore}%</span></div>
+                <div class="meter"><div class="meter-fill" style="width:${r.kwScore}%;"></div></div>
+              </div>
+            </div>
+            <div class="skill-section">
+              <div class="skill-col">
+                <h4>Matched skills</h4>
+                <div class="chip-list">${r.matched.length ? r.matched.map(s=>`<span class="chip matched">${escapeHtml(s)}</span>`).join('') : '<span class="empty-note">no direct skill matches found</span>'}</div>
+              </div>
+              <div class="skill-col">
+                <h4>Missing skills</h4>
+                <div class="chip-list">${r.missing.length ? r.missing.map(s=>`<span class="chip missing">${escapeHtml(s)}</span>`).join('') : '<span class="empty-note">no gaps — full coverage</span>'}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-section">
+            <div class="info-col">
+              <h4>Education</h4>
+              <div class="edu-line">${escapeHtml(r.candEdu.label)} ${eduFlag}</div>
+              <div class="edu-req">${escapeHtml(eduReqText)}</div>
+            </div>
+            <div class="info-col">
+              <h4>Certifications</h4>
+              <div class="chip-list">${certChips}</div>
+            </div>
+          </div>
+
+          <div class="link-badges">
+            ${githubBadge}
+            ${linkedinBadge}
+            ${portfolioBadge}
+          </div>
+
+          <div class="ats-row">
+            <span class="ats-badge ${r.ats.risk}">ATS risk: ${r.ats.risk}</span>
+            ${atsFlagsHtml}
+          </div>
+
+          <div class="email-box">
+            <input type="email" placeholder="candidate email" value="${escapeAttr(r.email)}" data-email-input="${r.id}">
+            <button class="email-send-btn" data-email-send="${r.id}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+              ${v.cls==='pass' ? 'Send shortlist email' : v.cls==='borderline' ? 'Send waiting email' : 'Send rejection email'}
+            </button>
+            <div class="email-note">Opens a pre-filled email in your default mail app — nothing is sent automatically from the browser.</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  candList.addEventListener('click', (e)=>{
+    const toggle = e.target.closest('[data-toggle]');
+    if(toggle && !e.target.closest('[data-email-send]') && !e.target.closest('[data-email-input]') && !e.target.closest('a')){
+      const card = toggle.closest('.cand-card');
+      card.classList.toggle('open');
+      return;
+    }
+    const sendBtn = e.target.closest('[data-email-send]');
+    if(sendBtn){
+      const id = sendBtn.getAttribute('data-email-send');
+      const input = candList.querySelector(`[data-email-input="${id}"]`);
+      const email = input ? input.value.trim() : '';
+      const r = results_.find(x=>x.id===id);
+      const v = verdictFor(r.finalScore);
+      if(!email){
+        input && input.focus();
+        statusLine.textContent = "⚠ add an email address for " + r.name + " first.";
+        return;
+      }
+      openMailto(email, buildEmailContent(r, v.cls));
+    }
+  });
+
+  // verdictCls: 'pass' -> selection email, 'borderline' -> waiting/under-review email, 'fail' -> rejection email
+  function buildEmailContent(r, verdictCls){
+    if(verdictCls === 'pass'){
+      return {
+        subject: `You've been shortlisted — next steps`,
+        body: `Hi ${r.name},\n\nGood news — based on our resume screening, you've been shortlisted for the next round. Your match score was ${r.finalScore}/100.\n\nWe'll follow up shortly with details on the next steps.\n\nBest regards,\nHiring Team`
+      };
+    }
+    if(verdictCls === 'borderline'){
+      return {
+        subject: `Your application is under review`,
+        body: `Hi ${r.name},\n\nThank you for applying. Your application is currently under review by our hiring team, and you have to wait for some time while we finish evaluating candidates for this role.\n\nWe appreciate your patience and will follow up with an update as soon as a decision has been made.\n\nBest regards,\nHiring Team`
+      };
+    }
+    return {
+      subject: `Update on your application`,
+      body: `Hi ${r.name},\n\nThank you for applying and for taking the time to share your resume. After reviewing applications against this role, we won't be moving forward with your application at this time.\n\nWe appreciate your interest and encourage you to apply again for future roles that match your background.\n\nBest regards,\nHiring Team`
+    };
+  }
+
+  // Opens a single mailto draft. Uses a synchronously-clicked <a> tag (not window.open)
+  // so it fires within the same user gesture and isn't treated as a blocked pop-up.
+  function openMailto(toOrOptions, content){
+    let url;
+    if(typeof toOrOptions === 'string'){
+      url = `mailto:${encodeURIComponent(toOrOptions)}?subject=${encodeURIComponent(content.subject)}&body=${encodeURIComponent(content.body)}`;
+    }else{
+      const bcc = toOrOptions.bcc.map(encodeURIComponent).join(',');
+      url = `mailto:?bcc=${bcc}&subject=${encodeURIComponent(content.subject)}&body=${encodeURIComponent(content.body)}`;
+    }
+    const a = document.createElement('a');
+    a.href = url;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  function collectEmails(list){
+    return list.map(r=>{
+      const input = candList.querySelector(`[data-email-input="${r.id}"]`);
+      return (input ? input.value.trim() : r.email);
+    }).filter(Boolean);
+  }
+
+  emailAllBtn.addEventListener('click', ()=>{
+    const shortlisted = results_.filter(r => verdictFor(r.finalScore).cls==='pass');
+    const emails = collectEmails(shortlisted);
+    if(emails.length===0){
+      statusLine.textContent = "no shortlisted candidates with an email address yet.";
+      return;
+    }
+    const content = {
+      subject: `You've been shortlisted — next steps`,
+      body: `Hi,\n\nGood news — based on our resume screening, you've been shortlisted for the next round.\n\nWe'll follow up shortly with details on the next steps.\n\nBest regards,\nHiring Team`
+    };
+    openMailto({bcc: emails}, content);
+    statusLine.textContent = `✓ opened a draft to ${emails.length} shortlisted candidate${emails.length===1?'':'s'}`;
+  });
+
+  emailAllReviewBtn.addEventListener('click', ()=>{
+    const inReview = results_.filter(r => verdictFor(r.finalScore).cls==='borderline');
+    const emails = collectEmails(inReview);
+    if(emails.length===0){
+      statusLine.textContent = "no in-review candidates with an email address yet.";
+      return;
+    }
+    const content = {
+      subject: `Your application is under review`,
+      body: `Hi,\n\nThank you for applying. Your application is currently under review by our hiring team, and you have to wait for some time while we finish evaluating candidates for this role.\n\nWe appreciate your patience and will follow up with an update as soon as a decision has been made.\n\nBest regards,\nHiring Team`
+    };
+    openMailto({bcc: emails}, content);
+    statusLine.textContent = `✓ opened a draft to ${emails.length} in-review candidate${emails.length===1?'':'s'}`;
+  });
+
+  emailAllRejectedBtn.addEventListener('click', ()=>{
+    const notShortlisted = results_.filter(r => verdictFor(r.finalScore).cls==='fail');
+    const emails = collectEmails(notShortlisted);
+    if(emails.length===0){
+      statusLine.textContent = "no not-shortlisted candidates with an email address yet.";
+      return;
+    }
+    const content = {
+      subject: `Update on your application`,
+      body: `Hi,\n\nThank you for applying and for taking the time to share your resume. After reviewing applications against this role, we won't be moving forward with your application at this time.\n\nWe appreciate your interest and encourage you to apply again for future roles that match your background.\n\nBest regards,\nHiring Team`
+    };
+    openMailto({bcc: emails}, content);
+    statusLine.textContent = `✓ opened a draft to ${emails.length} not-shortlisted candidate${emails.length===1?'':'s'}`;
+  });
+
+  // ---------------- CSV export ----------------
+  function csvEscape(val){
+    const s = String(val);
+    if(/[",\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+    return s;
+  }
+  csvBtn.addEventListener('click', ()=>{
+    if(!results_.length){
+      statusLine.textContent = "⚠ run an analysis first before exporting a report.";
+      return;
+    }
+    const rows = [[
+      "Rank","Name","Email","File","Final Score","Verdict",
+      "Experience %","Skill %","Keyword %","Candidate Years","Required Years",
+      "Education","Meets Education Req","Certifications Found",
+      "GitHub","LinkedIn","Portfolio","ATS Risk",
+      "Matched Skills","Missing Skills"
+    ]];
+    results_.forEach((r, idx)=>{
+      const v = verdictFor(r.finalScore);
+      rows.push([
+        idx+1, r.name, r.email||"", r.fileName, r.finalScore, v.label,
+        r.expScore, r.skillScore, r.kwScore, r.candYears, r.reqYears,
+        r.candEdu.label, r.eduMeets===null ? "n/a" : (r.eduMeets ? "yes" : "no"),
+        r.candCerts.join("; ")||"none",
+        r.links.github||"none", r.links.linkedin||"none", r.links.portfolio||"none",
+        r.ats.risk,
+        r.matched.join("; ")||"none", r.missing.join("; ")||"none"
+      ]);
+    });
+    const csvContent = rows.map(row => row.map(csvEscape).join(",")).join("\n");
+    const blob = new Blob([csvContent], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "scaniq-batch-report-" + Date.now() + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  // ---------------- utils ----------------
+  function escapeHtml(str){
+    return String(str||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+  function escapeAttr(str){ return escapeHtml(str); }
+
+  analyzeBtn.addEventListener('click', runAnalysis);
+  renderQueue();
+})();
+</script>
+
+</body>
+</html>
